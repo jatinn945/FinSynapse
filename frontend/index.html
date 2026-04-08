@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="FinSynapse – Multi-Agent Financial Decision Engine. Intelligent stock analysis with structured AI reasoning.">
+    <title>FinSynapse – Multi-Agent Financial Decision Engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <rect width="28" height="28" rx="8" fill="#2563EB" />
+                    <path d="M8 20V12L14 8L20 12V20" stroke="white" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M14 8V20" stroke="white" stroke-width="2" stroke-linecap="round" />
+                    <circle cx="14" cy="14" r="2" fill="white" />
+                </svg>
+            </div>
+            <div>
+                <span class="brand-name">FinSynapse</span>
+                <span class="brand-sub">PREMIUM ANALYTICS</span>
+            </div>
+        </div>
+
+        <ul class="nav-links">
+            <li>
+                <a href="#" class="nav-link active" data-page="dashboard" id="nav-dashboard">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <rect x="2" y="2" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.5" />
+                        <rect x="11" y="2" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.5" />
+                        <rect x="2" y="11" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.5" />
+                        <rect x="11" y="11" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.5" />
+                    </svg>
+                    Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="#" class="nav-link" data-page="analysis" id="nav-analysis">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <rect x="2" y="10" width="4" height="8" rx="1" stroke="currentColor" stroke-width="1.5" />
+                        <rect x="8" y="6" width="4" height="12" rx="1" stroke="currentColor" stroke-width="1.5" />
+                        <rect x="14" y="2" width="4" height="16" rx="1" stroke="currentColor" stroke-width="1.5" />
+                    </svg>
+                    Analysis
+                </a>
+            </li>
+            <li>
+                <a href="#" class="nav-link" data-page="simulation" id="nav-simulation">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5" />
+                        <path d="M10 6V10L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                    Simulation
+                </a>
+            </li>
+            <li>
+                <a href="#" class="nav-link" data-page="comparison" id="nav-comparison">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M4 7H16M4 13H16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        <path d="M7 4L4 7L7 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M13 10L16 13L13 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    Comparison
+                </a>
+            </li>
+            <li>
+                <a href="#" class="nav-link" data-page="timeline" id="nav-timeline">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M3 4L10 10L17 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M3 10L10 16L17 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    Timeline
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="user-avatar">FS</div>
+            <div>
+                <div class="user-name">FinSynapse</div>
+                <div class="user-tier">Pro Account</div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
+    <main class="main-content">
+        <!-- ─── Top Bar ─── -->
+        <header class="top-bar">
+            <div class="search-container">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <circle cx="8" cy="8" r="5.5" stroke="#94A3B8" stroke-width="1.5" />
+                    <path d="M12.5 12.5L16 16" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+                <input type="text" id="global-search" class="search-input"
+                    placeholder="Search markets, stocks, or indices...">
+            </div>
+            <div class="top-bar-right">
+                <button class="notification-btn" id="notification-btn">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M10 2C7.24 2 5 4.24 5 7V11L3 13V14H17V13L15 11V7C15 4.24 12.76 2 10 2Z"
+                            stroke="currentColor" stroke-width="1.5" />
+                        <path d="M8 14V15C8 16.1 8.9 17 10 17C11.1 17 12 16.1 12 15V14" stroke="currentColor"
+                            stroke-width="1.5" />
+                    </svg>
+                    <span class="notification-dot"></span>
+                </button>
+                <button class="primary-action-btn" id="analyze-header-btn">Analyze Stock</button>
+            </div>
+        </header>
+
+        <!-- ═══════════════════ PAGE: DASHBOARD ═══════════════════ -->
+        <section class="page active" id="page-dashboard">
+            <div class="page-header">
+                <span class="page-label">MARKET ANALYSIS</span>
+                <h1 class="page-title" id="dashboard-title">Welcome to FinSynapse</h1>
+            </div>
+
+            <!-- Stock Input -->
+            <div class="stock-input-card" id="stock-input-card">
+                <div class="input-group">
+                    <label class="input-label">Enter Stock Symbol</label>
+                    <div class="input-row">
+                        <input type="text" id="stock-symbol-input" class="stock-input"
+                            placeholder="e.g. AAPL, TSLA, NVDA, MSFT" autocomplete="off">
+                        <button class="analyze-btn" id="analyze-btn">
+                            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                                <path d="M3 9H15M15 9L10 4M15 9L10 14" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            Analyze
+                        </button>
+                    </div>
+                    <div class="quick-picks">
+                        <span class="quick-label">Quick picks:</span>
+                        <button class="quick-btn" data-symbol="AAPL">AAPL</button>
+                        <button class="quick-btn" data-symbol="TSLA">TSLA</button>
+                        <button class="quick-btn" data-symbol="NVDA">NVDA</button>
+                        <button class="quick-btn" data-symbol="MSFT">MSFT</button>
+                        <button class="quick-btn" data-symbol="GOOGL">GOOGL</button>
+                        <button class="quick-btn" data-symbol="AMZN">AMZN</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading-state hidden" id="loading-state">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Running multi-agent analysis...</div>
+                <div class="loading-agents" id="loading-agents">
+                    <div class="agent-status" id="agent-data">
+                        <div class="agent-dot"></div>Data Agent
+                    </div>
+                    <div class="agent-status" id="agent-news">
+                        <div class="agent-dot"></div>News Agent
+                    </div>
+                    <div class="agent-status" id="agent-sentiment">
+                        <div class="agent-dot"></div>Sentiment Agent
+                    </div>
+                    <div class="agent-status" id="agent-risk">
+                        <div class="agent-dot"></div>Risk Agent
+                    </div>
+                    <div class="agent-status" id="agent-engine">
+                        <div class="agent-dot"></div>Decision Engine
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Results (hidden until analysis) -->
+            <div class="dashboard-results hidden" id="dashboard-results">
+                <!-- Price Hero Card -->
+                <div class="hero-card" id="hero-card">
+                    <div class="hero-left">
+                        <div class="hero-price-label">Live Trading Price</div>
+                        <div class="hero-price" id="hero-price">$0.00</div>
+                        <div class="hero-change" id="hero-change">
+                            <span class="change-arrow">↑</span>
+                            <span id="hero-change-value">+0.00%</span>
+                        </div>
+                    </div>
+                    <div class="hero-right">
+                        <div class="decision-badge" id="decision-badge">HOLD</div>
+                        <div class="confidence-label">Confidence Score</div>
+                        <div class="confidence-value" id="confidence-value">0%</div>
+                    </div>
+                </div>
+
+                <!-- Metric Cards Row -->
+                <div class="metrics-row">
+                    <div class="metric-card" id="metric-sentiment">
+                        <div class="metric-header">
+                            <span class="metric-icon sentiment-icon">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                    <path
+                                        d="M10 2C5.58 2 2 5.58 2 10C2 14.42 5.58 18 10 18C14.42 18 18 14.42 18 10C18 5.58 14.42 2 10 2Z"
+                                        stroke="currentColor" stroke-width="1.5" />
+                                    <path d="M7 12C7 12 8.5 14 10 14C11.5 14 13 12 13 12" stroke="currentColor"
+                                        stroke-width="1.5" stroke-linecap="round" />
+                                    <circle cx="7" cy="9" r="1" fill="currentColor" />
+                                    <circle cx="13" cy="9" r="1" fill="currentColor" />
+                                </svg>
+                            </span>
+                            <span class="metric-title">Market Sentiment</span>
+                        </div>
+                        <div class="metric-value" id="sentiment-value">Neutral</div>
+                        <div class="metric-bar-container">
+                            <div class="metric-bar" id="sentiment-bar"></div>
+                        </div>
+                        <div class="metric-sub" id="sentiment-score">Score: 0.000</div>
+                    </div>
+                    <div class="metric-card" id="metric-risk">
+                        <div class="metric-header">
+                            <span class="metric-icon risk-icon">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                    <path d="M10 2L18 18H2L10 2Z" stroke="currentColor" stroke-width="1.5"
+                                        stroke-linejoin="round" />
+                                    <path d="M10 8V12" stroke="currentColor" stroke-width="1.5"
+                                        stroke-linecap="round" />
+                                    <circle cx="10" cy="15" r="0.5" fill="currentColor" stroke="currentColor" />
+                                </svg>
+                            </span>
+                            <span class="metric-title">Risk Level</span>
+                        </div>
+                        <div class="metric-value" id="risk-value">Unknown</div>
+                        <div class="metric-sub" id="risk-volatility">Volatility: 0.0%</div>
+                        <div class="metric-sub" id="risk-drawdown">Max Drawdown: 0.0%</div>
+                    </div>
+                    <div class="metric-card" id="metric-volume">
+                        <div class="metric-header">
+                            <span class="metric-icon volume-icon">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                    <rect x="3" y="10" width="3" height="8" rx="1" stroke="currentColor"
+                                        stroke-width="1.5" />
+                                    <rect x="8.5" y="5" width="3" height="13" rx="1" stroke="currentColor"
+                                        stroke-width="1.5" />
+                                    <rect x="14" y="2" width="3" height="16" rx="1" stroke="currentColor"
+                                        stroke-width="1.5" />
+                                </svg>
+                            </span>
+                            <span class="metric-title">Market Data</span>
+                        </div>
+                        <div class="metric-value" id="market-cap-value">N/A</div>
+                        <div class="metric-sub" id="pe-ratio">P/E Ratio: N/A</div>
+                        <div class="metric-sub" id="volume-value">Volume: 0</div>
+                    </div>
+                </div>
+
+                <!-- Chart + Signals Row -->
+                <div class="two-col-row">
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Price Chart</h3>
+                            <div class="chart-period-btns">
+                                <button class="period-btn active">1M</button>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="price-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card signals-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Agent Signals</h3>
+                        </div>
+                        <div class="signals-list" id="signals-list">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Summary + News Row -->
+                <div class="two-col-row">
+                    <div class="card ai-summary-card" id="ai-summary-card">
+                        <div class="ai-summary-badge">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M8 1L10 5.5L15 6.5L11.5 10L12.5 15L8 12.5L3.5 15L4.5 10L1 6.5L6 5.5L8 1Z"
+                                    fill="currentColor" />
+                            </svg>
+                            AI SUMMARY
+                        </div>
+                        <p class="ai-summary-text" id="ai-summary-text">Run an analysis to see the AI-generated summary.
+                        </p>
+                        <div class="ai-metrics" id="ai-metrics"></div>
+                    </div>
+                    <div class="card news-card">
+                        <div class="card-header">
+                            <h3 class="card-title">News Feed</h3>
+                            <span class="live-dot">● LIVE</span>
+                        </div>
+                        <div class="news-list" id="news-list">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Explanation Panel -->
+                <div class="card explanation-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Structured Reasoning</h3>
+                        <span class="card-subtitle">Full decision engine output</span>
+                    </div>
+                    <pre class="explanation-text" id="explanation-text"></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════ PAGE: ANALYSIS ═══════════════════ -->
+        <section class="page" id="page-analysis">
+            <div class="page-header">
+                <span class="page-label">MARKET ANALYSIS</span>
+                <h1 class="page-title">Intelligence Overview</h1>
+            </div>
+            <div class="analysis-prompt">
+                <p>Enter a stock symbol on the Dashboard to view detailed analysis. Sentiment indicators, risk indices,
+                    and news feeds will populate here.</p>
+                <button class="goto-dashboard-btn" onclick="navigateTo('dashboard')">Go to Dashboard →</button>
+            </div>
+            <div class="analysis-content hidden" id="analysis-content">
+                <div class="two-col-row">
+                    <div class="card">
+                        <h3 class="card-title">Sentiment Indicator</h3>
+                        <div class="big-score" id="analysis-sentiment-score">0</div>
+                        <div class="score-label" id="analysis-sentiment-label">NEUTRAL</div>
+                        <div class="sentiment-bar-visual" id="analysis-sentiment-bar">
+                            <div class="bar-segment fear"></div>
+                            <div class="bar-segment neutral"></div>
+                            <div class="bar-segment greed"></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 class="card-title">Risk Index</h3>
+                        <div class="risk-gauge" id="analysis-risk-gauge">
+                            <div class="gauge-fill"></div>
+                            <div class="gauge-label" id="analysis-risk-label">Moderate</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Headline Sentiment Ranking</h3>
+                    </div>
+                    <div class="headline-ranking" id="headline-ranking">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════ PAGE: SIMULATION ═══════════════════ -->
+        <section class="page" id="page-simulation">
+            <div class="page-header">
+                <span class="page-label">PREMIUM ANALYTICS</span>
+                <h1 class="page-title">Market Stress Simulator</h1>
+                <p class="page-desc">Model hypothetical market movements to validate your portfolio strategy.</p>
+            </div>
+            <div class="sim-layout">
+                <div class="card sim-params-card">
+                    <h3 class="card-title">Simulation Parameters</h3>
+                    <label class="input-label">Target Asset</label>
+                    <input type="text" id="sim-symbol" class="stock-input" placeholder="e.g. AAPL" value="AAPL">
+
+                    <label class="input-label" style="margin-top:16px">Hypothetical Price Change</label>
+                    <div class="slider-container">
+                        <input type="range" id="sim-slider" min="-50" max="50" value="5" class="sim-slider">
+                        <div class="slider-value" id="sim-slider-value">+5.0%</div>
+                    </div>
+                    <div class="slider-labels">
+                        <span>-50% CRASH</span>
+                        <span>0% NEUTRAL</span>
+                        <span>+50% SURGE</span>
+                    </div>
+
+                    <button class="analyze-btn sim-btn" id="sim-run-btn">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <polygon points="4,2 14,8 4,14" fill="currentColor" />
+                        </svg>
+                        Run Synapse Model
+                    </button>
+                </div>
+
+                <div class="sim-results hidden" id="sim-results">
+                    <div class="card sim-verdict-card">
+                        <div class="verdict-label">SIMULATION VERDICT</div>
+                        <div class="verdict-decision" id="sim-decision">—</div>
+                        <div class="verdict-confidence" id="sim-confidence">Confidence: —</div>
+                    </div>
+                    <div class="card">
+                        <h3 class="card-title">Scenario Projection vs Baseline</h3>
+                        <div class="chart-container">
+                            <canvas id="sim-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="sim-metrics-row" id="sim-metrics-row">
+                        <!-- Populated dynamically -->
+                    </div>
+                    <div class="card">
+                        <pre class="explanation-text" id="sim-impact-text"></pre>
+                    </div>
+                </div>
+
+                <div class="sim-loading hidden" id="sim-loading">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Running simulation model...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════ PAGE: COMPARISON ═══════════════════ -->
+        <section class="page" id="page-comparison">
+            <div class="page-header">
+                <span class="page-label">ALPHA INTELLIGENCE</span>
+                <h1 class="page-title">Asset Comparison</h1>
+            </div>
+            <div class="compare-inputs">
+                <div class="compare-input-group">
+                    <label class="input-label">Stock 1</label>
+                    <input type="text" id="compare-stock1" class="stock-input" placeholder="e.g. AAPL" value="AAPL">
+                </div>
+                <div class="compare-vs">VS</div>
+                <div class="compare-input-group">
+                    <label class="input-label">Stock 2</label>
+                    <input type="text" id="compare-stock2" class="stock-input" placeholder="e.g. TSLA" value="TSLA">
+                </div>
+                <button class="analyze-btn" id="compare-btn">Compare</button>
+            </div>
+
+            <div class="compare-loading hidden" id="compare-loading">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Analyzing both stocks...</div>
+            </div>
+
+            <div class="compare-results hidden" id="compare-results">
+                <div class="compare-cards" id="compare-cards">
+                    <!-- Populated dynamically -->
+                </div>
+                <div class="card" id="compare-summary-card">
+                    <h3 class="card-title">AI Summary Insight</h3>
+                    <p id="compare-summary-text"></p>
+                    <p id="compare-recommendation" class="recommendation-text"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════ PAGE: TIMELINE ═══════════════════ -->
+        <section class="page" id="page-timeline">
+            <div class="page-header">
+                <span class="page-label">DECISION HISTORY</span>
+                <h1 class="page-title">Decision Timeline</h1>
+                <p class="page-desc">A chronological log of all synthetic signals and executed analyses.</p>
+            </div>
+            <div class="timeline-controls">
+                <input type="text" id="timeline-symbol" class="stock-input"
+                    placeholder="Filter by symbol (leave empty for all)">
+                <button class="analyze-btn" id="timeline-load-btn">Load History</button>
+            </div>
+            <div class="timeline-list" id="timeline-list">
+                <div class="timeline-empty">
+                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                        <circle cx="24" cy="24" r="20" stroke="#CBD5E1" stroke-width="2" />
+                        <path d="M24 14V26L32 30" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                    <p>No decisions recorded yet. Analyze a stock to start building your timeline.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+</body>
+
+</html>
