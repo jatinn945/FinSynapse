@@ -173,6 +173,11 @@ async def health_check():
     }
 
 
+# ── Extensions Router (safe addition – does not modify existing endpoints) ──
+from extensions import router as extensions_router
+app.include_router(extensions_router)
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

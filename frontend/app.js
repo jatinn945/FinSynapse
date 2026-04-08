@@ -875,3 +875,421 @@ function animateNumber(element, from, to, suffix = '') {
 
 console.log('FinSynapse – Multi-Agent Financial Decision Engine');
 console.log('Ready. Enter a stock symbol to begin analysis.');
+
+// ═══════════════════════════════════════════════════════════════
+// EXTENSIONS – Stock Dropdown Picker
+// ═══════════════════════════════════════════════════════════════
+
+(function initStockDropdown() {
+    const toggleBtn = document.getElementById('stock-dropdown-toggle');
+    const menu = document.getElementById('stock-dropdown-menu');
+    const search = document.getElementById('stock-dropdown-search');
+    const list = document.getElementById('stock-dropdown-list');
+
+    if (!toggleBtn || !menu) return;
+
+    let stockData = null;
+
+    // Fetch stock list from API
+    async function loadStockList() {
+        try {
+            const res = await fetch(`${API_BASE}/stocks`);
+            if (!res.ok) return;
+            stockData = await res.json();
+            renderStockList('');
+        } catch (e) {
+            console.warn('Stock list fetch failed, using fallback');
+            stockData = {
+                stocks: {
+                    "US Stocks": [
+                        { symbol: "AAPL", name: "Apple Inc.", category: "US" },
+                        { symbol: "TSLA", name: "Tesla Inc.", category: "US" },
+                        { symbol: "MSFT", name: "Microsoft Corp.", category: "US" },
+                        { symbol: "NVDA", name: "NVIDIA Corp.", category: "US" },
+                        { symbol: "AMZN", name: "Amazon.com Inc.", category: "US" },
+                        { symbol: "META", name: "Meta Platforms Inc.", category: "US" },
+                        { symbol: "GOOGL", name: "Alphabet Inc.", category: "US" },
+                        { symbol: "AMD", name: "Advanced Micro Devices", category: "US" },
+                        { symbol: "NFLX", name: "Netflix Inc.", category: "US" },
+                        { symbol: "JPM", name: "JPMorgan Chase & Co.", category: "US" },
+                    ],
+                    "Indian Stocks": [
+                        { symbol: "RELIANCE.NS", name: "Reliance Industries", category: "India" },
+                        { symbol: "TCS.NS", name: "Tata Consultancy Services", category: "India" },
+                        { symbol: "HDFCBANK.NS", name: "HDFC Bank", category: "India" },
+                        { symbol: "INFY.NS", name: "Infosys", category: "India" },
+                        { symbol: "ICICIBANK.NS", name: "ICICI Bank", category: "India" },
+                        { symbol: "SBIN.NS", name: "State Bank of India", category: "India" },
+                        { symbol: "LT.NS", name: "Larsen & Toubro", category: "India" },
+                        { symbol: "ITC.NS", name: "ITC Ltd.", category: "India" },
+                    ],
+                    "Indices": [
+                        { symbol: "^NSEI", name: "Nifty 50", category: "Index" },
+                        { symbol: "^NSEBANK", name: "Nifty Bank", category: "Index" },
+                        { symbol: "^GSPC", name: "S&P 500", category: "Index" },
+                        { symbol: "^IXIC", name: "NASDAQ Composite", category: "Index" },
+                    ],
+                }
+            };
+            renderStockList('');
+        }
+    }
+
+    function renderStockList(filter) {
+        if (!stockData || !stockData.stocks) return;
+        list.innerHTML = '';
+
+        const f = filter.toLowerCase();
+
+        Object.entries(stockData.stocks).forEach(([category, stocks]) => {
+            const filtered = stocks.filter(s =>
+                s.symbol.toLowerCase().includes(f) || s.name.toLowerCase().includes(f)
+            );
+            if (filtered.length === 0) return;
+
+            const catEl = document.createElement('div');
+            catEl.className = 'stock-dropdown-category';
+            catEl.textContent = category;
+            list.appendChild(catEl);
+
+            filtered.forEach(stock => {
+                const item = document.createElement('div');
+                item.className = 'stock-dropdown-item';
+                const badgeCls = stock.category === 'US' ? 'us' : stock.category === 'India' ? 'india' : 'index';
+                item.innerHTML = `
+                    <div>
+                        <span class="stock-dropdown-item-symbol">${escapeHtml(stock.symbol)}</span>
+                        <span class="stock-dropdown-item-badge ${badgeCls}">${stock.category.toUpperCase()}</span>
+                    </div>
+                    <span class="stock-dropdown-item-name">${escapeHtml(stock.name)}</span>
+                `;
+                item.addEventListener('click', () => {
+                    symbolInput.value = stock.symbol;
+                    closeDropdown();
+                    runAnalysis();
+                });
+                list.appendChild(item);
+            });
+        });
+    }
+
+    function openDropdown() {
+        menu.classList.remove('hidden');
+        toggleBtn.classList.add('open');
+        search.value = '';
+        search.focus();
+        renderStockList('');
+    }
+
+    function closeDropdown() {
+        menu.classList.add('hidden');
+        toggleBtn.classList.remove('open');
+    }
+
+    toggleBtn.addEventListener('click', () => {
+        if (menu.classList.contains('hidden')) {
+            openDropdown();
+        } else {
+            closeDropdown();
+        }
+    });
+
+    search.addEventListener('input', () => {
+        renderStockList(search.value.trim());
+    });
+
+    // Close dropdown on outside click
+    document.addEventListener('click', (e) => {
+        const container = document.getElementById('stock-dropdown-container');
+        if (container && !container.contains(e.target)) {
+            closeDropdown();
+        }
+    });
+
+    loadStockList();
+})();
+
+
+// ═══════════════════════════════════════════════════════════════
+// EXTENSIONS – Benchmark Comparison
+// ═══════════════════════════════════════════════════════════════
+
+(function initBenchmark() {
+    const runBtn = document.getElementById('bench-run-btn');
+    if (!runBtn) return;
+
+    let benchChart = null;
+
+    runBtn.addEventListener('click', runBenchmark);
+
+    async function runBenchmark() {
+        const symbol = document.getElementById('bench-symbol').value.trim().toUpperCase();
+        const benchmark = document.getElementById('bench-index').value;
+
+        if (!symbol) return;
+
+        document.getElementById('bench-results').classList.add('hidden');
+        document.getElementById('bench-loading').classList.remove('hidden');
+        runBtn.disabled = true;
+
+        try {
+            const res = await fetch(`${API_BASE}/benchmark/${symbol}?benchmark=${encodeURIComponent(benchmark)}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+
+            await sleep(400);
+
+            document.getElementById('bench-loading').classList.add('hidden');
+            document.getElementById('bench-results').classList.remove('hidden');
+
+            renderBenchmark(data);
+
+        } catch (err) {
+            console.error('Benchmark failed:', err);
+            document.getElementById('bench-loading').classList.add('hidden');
+            alert('Benchmark comparison failed. Please check the symbols and try again.');
+        } finally {
+            runBtn.disabled = false;
+        }
+    }
+
+    function renderBenchmark(data) {
+        // Stock return
+        const stockReturnEl = document.getElementById('bench-stock-return');
+        stockReturnEl.textContent = `${data.stock_return_pct >= 0 ? '+' : ''}${data.stock_return_pct.toFixed(2)}%`;
+        stockReturnEl.className = `bench-hero-value ${data.stock_return_pct >= 0 ? 'positive' : 'negative'}`;
+        document.getElementById('bench-stock-name').textContent = data.stock_name || data.symbol;
+
+        // Benchmark return
+        const benchReturnEl = document.getElementById('bench-index-return');
+        benchReturnEl.textContent = `${data.benchmark_return_pct >= 0 ? '+' : ''}${data.benchmark_return_pct.toFixed(2)}%`;
+        benchReturnEl.className = `bench-hero-value ${data.benchmark_return_pct >= 0 ? 'positive' : 'negative'}`;
+        document.getElementById('bench-index-name').textContent = data.benchmark_name || data.benchmark;
+
+        // Alpha
+        const alphaEl = document.getElementById('bench-alpha');
+        alphaEl.textContent = `${data.alpha >= 0 ? '+' : ''}${data.alpha.toFixed(2)}%`;
+        alphaEl.className = `bench-hero-value ${data.alpha >= 0 ? 'positive' : 'negative'}`;
+        document.getElementById('bench-alpha-verdict').textContent =
+            data.outperforming ? '🟢 Outperforming Benchmark' : '🔴 Underperforming Benchmark';
+
+        // Chart
+        renderBenchChart(data);
+
+        // Summary
+        document.getElementById('bench-summary-text').textContent = data.summary || '';
+    }
+
+    function renderBenchChart(data) {
+        const ctx = document.getElementById('bench-chart');
+        if (!ctx) return;
+
+        if (benchChart) benchChart.destroy();
+
+        const labels = (data.dates || []).map(d => {
+            const date = new Date(d);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        });
+
+        benchChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: data.stock_name || data.symbol,
+                        data: data.stock_normalized || [],
+                        borderColor: '#2563EB',
+                        borderWidth: 2.5,
+                        tension: 0.35,
+                        pointRadius: 0,
+                        pointHoverRadius: 5,
+                        fill: false,
+                    },
+                    {
+                        label: data.benchmark_name || data.benchmark,
+                        data: data.benchmark_normalized || [],
+                        borderColor: '#94A3B8',
+                        borderWidth: 2,
+                        borderDash: [6, 4],
+                        tension: 0.35,
+                        pointRadius: 0,
+                        fill: false,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            font: { family: "'Inter', sans-serif", size: 12 },
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: '#0F172A',
+                        cornerRadius: 8,
+                        padding: 12,
+                        callbacks: {
+                            label: (c) => `${c.dataset.label}: ${c.parsed.y.toFixed(2)}`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11 }, color: '#94A3B8', maxTicksLimit: 8 },
+                        border: { display: false },
+                    },
+                    y: {
+                        grid: { color: '#F1F5F9' },
+                        ticks: {
+                            font: { size: 11 },
+                            color: '#94A3B8',
+                            callback: (v) => v.toFixed(1),
+                        },
+                        border: { display: false },
+                    }
+                }
+            }
+        });
+    }
+})();
+
+
+// ═══════════════════════════════════════════════════════════════
+// EXTENSIONS – AI Chat
+// ═══════════════════════════════════════════════════════════════
+
+(function initChat() {
+    const chatInput = document.getElementById('chat-input');
+    const chatSendBtn = document.getElementById('chat-send-btn');
+    const chatMessages = document.getElementById('chat-messages');
+    const contextValue = document.getElementById('chat-context-value');
+
+    if (!chatInput || !chatSendBtn) return;
+
+    chatSendBtn.addEventListener('click', sendChatMessage);
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendChatMessage();
+        }
+    });
+
+    // Update chat context whenever analysis is run
+    const _origRunAnalysis = window.runAnalysis || null;
+
+    // We rely on state.lastAnalysis which is set by the existing runAnalysis function
+    function getChatContext() {
+        const analysis = state.lastAnalysis;
+        if (!analysis) return null;
+        return {
+            symbol: analysis.symbol || analysis.stock_data?.symbol || '',
+            decision: analysis.decision || '',
+            sentiment: analysis.sentiment?.label || '',
+            risk: analysis.risk?.risk_level || '',
+            confidence: analysis.confidence || 0,
+            stock_price: analysis.stock_data?.current_price || 0,
+        };
+    }
+
+    // Periodically check and update context bar
+    setInterval(() => {
+        const ctx = getChatContext();
+        if (ctx && contextValue) {
+            contextValue.textContent = `${ctx.symbol} | ${ctx.decision} (${ctx.confidence.toFixed(1)}%) | Sentiment: ${ctx.sentiment} | Risk: ${ctx.risk}`;
+        }
+    }, 2000);
+
+    async function sendChatMessage() {
+        const question = chatInput.value.trim();
+        if (!question) return;
+
+        // Add user message
+        addMessage('user', question);
+        chatInput.value = '';
+        chatSendBtn.disabled = true;
+
+        // Show typing indicator
+        const typingEl = addTypingIndicator();
+
+        try {
+            const ctx = getChatContext() || {};
+            const res = await fetch(`${API_BASE}/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    question: question,
+                    symbol: ctx.symbol || '',
+                    decision: ctx.decision || '',
+                    sentiment: ctx.sentiment || '',
+                    risk: ctx.risk || '',
+                    confidence: ctx.confidence || 0,
+                    stock_price: ctx.stock_price || 0,
+                }),
+            });
+
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+
+            // Remove typing indicator
+            typingEl.remove();
+
+            // Add bot response
+            addMessage('bot', data.answer || 'Sorry, I couldn\'t generate a response.');
+
+        } catch (err) {
+            console.error('Chat failed:', err);
+            typingEl.remove();
+            addMessage('bot', 'I\'m having trouble reaching the AI service right now. Please try again in a moment.');
+        } finally {
+            chatSendBtn.disabled = false;
+            chatInput.focus();
+        }
+    }
+
+    function addMessage(role, text) {
+        const msg = document.createElement('div');
+        msg.className = `chat-message ${role}`;
+
+        const avatarHtml = role === 'bot'
+            ? `<div class="chat-avatar bot-avatar"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect width="20" height="20" rx="6" fill="#2563EB"/><path d="M6 14V10L10 8L14 10V14" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="1.5" fill="white"/></svg></div>`
+            : `<div class="chat-avatar user-avatar-chat">YOU</div>`;
+
+        const senderText = role === 'bot' ? 'FinSynapse AI' : 'You';
+
+        msg.innerHTML = `
+            ${avatarHtml}
+            <div class="chat-bubble">
+                <div class="chat-sender">${senderText}</div>
+                <div class="chat-text">${escapeHtml(text)}</div>
+            </div>
+        `;
+
+        chatMessages.appendChild(msg);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function addTypingIndicator() {
+        const msg = document.createElement('div');
+        msg.className = 'chat-message bot';
+        msg.innerHTML = `
+            <div class="chat-avatar bot-avatar"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect width="20" height="20" rx="6" fill="#2563EB"/><path d="M6 14V10L10 8L14 10V14" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="1.5" fill="white"/></svg></div>
+            <div class="chat-bubble">
+                <div class="chat-sender">FinSynapse AI</div>
+                <div class="chat-typing-indicator"><span></span><span></span><span></span></div>
+            </div>
+        `;
+        chatMessages.appendChild(msg);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return msg;
+    }
+})();
+
+console.log('FinSynapse Extensions loaded: Benchmark, AI Chat, Stock Picker');
