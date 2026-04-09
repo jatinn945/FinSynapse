@@ -3,13 +3,68 @@ Benchmark Tool – Compares a stock's performance against a benchmark index.
 Uses yfinance to fetch both stock and benchmark prices.
 
 This is a NEW extension module. It does NOT modify any existing agent logic.
+Includes fallback for cloud hosting where Ticker.history() may fail.
 """
 
 import yfinance as yf
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 
 logger = logging.getLogger(__name__)
+
+
+def _fetch_prices(symbol: str, period: str) -> Tuple[List[float], List[str]]:
+    """
+    Fetch closing prices with fallback methods.
+    Returns (prices, dates) or ([], []) on failure.
+    """
+    # Method 1: Ticker.history()
+    try:
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period=period)
+        if not hist.empty and len(hist) > 0:
+            prices = hist["Close"].dropna().tolist()
+            dates = [d.strftime("%Y-%m-%d") for d in hist.index]
+            if prices:
+                return prices, dates
+    except Exception as e:
+        logger.warning(f"Ticker.history() failed for {symbol}: {e}")
+
+    # Method 2: yf.download()
+    try:
+        hist = yf.download(symbol, period=period, progress=False, auto_adjust=True)
+        if not hist.empty and len(hist) > 0:
+            if hasattr(hist.columns, 'nlevels') and hist.columns.nlevels > 1:
+                close_col = hist["Close"]
+                if hasattr(close_col, 'columns'):
+                    close_col = close_col.iloc[:, 0]
+                prices = close_col.dropna().tolist()
+            else:
+                prices = hist["Close"].dropna().tolist()
+            dates = [d.strftime("%Y-%m-%d") for d in hist.index]
+            if prices:
+                return prices, dates
+    except Exception as e:
+        logger.warning(f"yf.download() failed for {symbol}: {e}")
+
+    # Method 3: yf.download() with longer period
+    try:
+        hist = yf.download(symbol, period="3mo", progress=False, auto_adjust=True)
+        if not hist.empty and len(hist) > 0:
+            if hasattr(hist.columns, 'nlevels') and hist.columns.nlevels > 1:
+                close_col = hist["Close"]
+                if hasattr(close_col, 'columns'):
+                    close_col = close_col.iloc[:, 0]
+                prices = close_col.dropna().tolist()
+            else:
+                prices = hist["Close"].dropna().tolist()
+            dates = [d.strftime("%Y-%m-%d") for d in hist.index]
+            if prices:
+                return prices, dates
+    except Exception as e:
+        logger.warning(f"3mo download failed for {symbol}: {e}")
+
+    return [], []
 
 
 def get_benchmark_data(
@@ -29,25 +84,15 @@ def get_benchmark_data(
         Dictionary with stock_prices, benchmark_prices, and relative_performance
     """
     try:
-        # Fetch stock data
-        stock_ticker = yf.Ticker(symbol.upper())
-        stock_hist = stock_ticker.history(period=period)
-
-        if stock_hist.empty:
+        # Fetch stock data (with fallback)
+        stock_prices, stock_dates = _fetch_prices(symbol.upper(), period)
+        if not stock_prices:
             raise ValueError(f"No data found for symbol: {symbol}")
 
-        stock_prices = stock_hist["Close"].tolist()
-        stock_dates = [d.strftime("%Y-%m-%d") for d in stock_hist.index]
-
-        # Fetch benchmark data
-        bench_ticker = yf.Ticker(benchmark)
-        bench_hist = bench_ticker.history(period=period)
-
-        if bench_hist.empty:
+        # Fetch benchmark data (with fallback)
+        bench_prices, bench_dates = _fetch_prices(benchmark, period)
+        if not bench_prices:
             raise ValueError(f"No data found for benchmark: {benchmark}")
-
-        bench_prices = bench_hist["Close"].tolist()
-        bench_dates = [d.strftime("%Y-%m-%d") for d in bench_hist.index]
 
         # Calculate relative performance (normalized to starting price = 100)
         stock_normalized = _normalize(stock_prices)
@@ -65,12 +110,17 @@ def get_benchmark_data(
             for i in range(min_len)
         ]
 
-        # Get stock info for display
-        stock_info = stock_ticker.info
-        stock_name = stock_info.get("shortName", symbol.upper())
-
-        bench_info = bench_ticker.info
-        bench_name = bench_info.get("shortName", benchmark)
+        # Get stock/benchmark names (safe)
+        stock_name = symbol.upper()
+        bench_name = benchmark
+        try:
+            stock_name = yf.Ticker(symbol.upper()).info.get("shortName", symbol.upper())
+        except Exception:
+            pass
+        try:
+            bench_name = yf.Ticker(benchmark).info.get("shortName", benchmark)
+        except Exception:
+            pass
 
         return {
             "symbol": symbol.upper(),
