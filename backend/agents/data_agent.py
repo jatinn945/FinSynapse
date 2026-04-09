@@ -87,6 +87,10 @@ def _build_stock_data(symbol: str, hist, ticker) -> StockData:
         else:
             prices = hist["Close"].dropna().tolist()
 
+        # Filter out any remaining NaN/None values (yf.download on cloud can leak NaNs)
+        import math
+        prices = [p for p in prices if p is not None and not math.isnan(p)]
+
         if not prices:
             raise ValueError("No price data extracted")
 

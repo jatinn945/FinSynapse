@@ -18,13 +18,19 @@ def _fetch_prices(symbol: str, period: str) -> Tuple[List[float], List[str]]:
     Fetch closing prices with fallback methods.
     Returns (prices, dates) or ([], []) on failure.
     """
+    import math
+
+    def _clean(prices_raw):
+        """Remove NaN/None values that leak through dropna on cloud."""
+        return [p for p in prices_raw if p is not None and not math.isnan(p)]
+
     # Method 1: Ticker.history()
     try:
         ticker = yf.Ticker(symbol)
         hist = ticker.history(period=period)
         if not hist.empty and len(hist) > 0:
-            prices = hist["Close"].dropna().tolist()
-            dates = [d.strftime("%Y-%m-%d") for d in hist.index]
+            prices = _clean(hist["Close"].dropna().tolist())
+            dates = [d.strftime("%Y-%m-%d") for d in hist.index][:len(prices)]
             if prices:
                 return prices, dates
     except Exception as e:
@@ -38,10 +44,10 @@ def _fetch_prices(symbol: str, period: str) -> Tuple[List[float], List[str]]:
                 close_col = hist["Close"]
                 if hasattr(close_col, 'columns'):
                     close_col = close_col.iloc[:, 0]
-                prices = close_col.dropna().tolist()
+                prices = _clean(close_col.dropna().tolist())
             else:
-                prices = hist["Close"].dropna().tolist()
-            dates = [d.strftime("%Y-%m-%d") for d in hist.index]
+                prices = _clean(hist["Close"].dropna().tolist())
+            dates = [d.strftime("%Y-%m-%d") for d in hist.index][:len(prices)]
             if prices:
                 return prices, dates
     except Exception as e:
@@ -55,10 +61,10 @@ def _fetch_prices(symbol: str, period: str) -> Tuple[List[float], List[str]]:
                 close_col = hist["Close"]
                 if hasattr(close_col, 'columns'):
                     close_col = close_col.iloc[:, 0]
-                prices = close_col.dropna().tolist()
+                prices = _clean(close_col.dropna().tolist())
             else:
-                prices = hist["Close"].dropna().tolist()
-            dates = [d.strftime("%Y-%m-%d") for d in hist.index]
+                prices = _clean(hist["Close"].dropna().tolist())
+            dates = [d.strftime("%Y-%m-%d") for d in hist.index][:len(prices)]
             if prices:
                 return prices, dates
     except Exception as e:
