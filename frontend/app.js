@@ -1293,3 +1293,310 @@ console.log('Ready. Enter a stock symbol to begin analysis.');
 })();
 
 console.log('FinSynapse Extensions loaded: Benchmark, AI Chat, Stock Picker');
+
+
+// ═══════════════════════════════════════════════════════════════
+// EXTENSIONS – Portfolio Intelligence Hub
+// ═══════════════════════════════════════════════════════════════
+
+(function initPortfolio() {
+    const runBtn = document.getElementById('portfolio-run-btn');
+    const inputEl = document.getElementById('portfolio-input');
+
+    if (!runBtn || !inputEl) return;
+
+    // Run button
+    runBtn.addEventListener('click', runPortfolioAnalysis);
+
+    // Enter key
+    inputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') runPortfolioAnalysis();
+    });
+
+    // Preset buttons
+    document.querySelectorAll('.portfolio-preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            inputEl.value = btn.dataset.symbols;
+            runPortfolioAnalysis();
+        });
+    });
+
+    async function runPortfolioAnalysis() {
+        const raw = inputEl.value.trim();
+        if (!raw) { inputEl.focus(); return; }
+
+        const symbols = raw.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+
+        if (symbols.length < 2) {
+            alert('Please enter at least 2 stock symbols, separated by commas.');
+            return;
+        }
+        if (symbols.length > 10) {
+            alert('Maximum 10 symbols allowed.');
+            return;
+        }
+
+        // Show loading
+        document.getElementById('portfolio-results').classList.add('hidden');
+        document.getElementById('portfolio-loading').classList.remove('hidden');
+        document.getElementById('portfolio-loading-progress').textContent =
+            `Analyzing ${symbols.length} stocks: ${symbols.join(', ')}...`;
+        runBtn.disabled = true;
+
+        try {
+            const res = await fetch(`${API_BASE}/portfolio/analyze`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symbols }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.detail || `HTTP ${res.status}`);
+            }
+
+            const data = await res.json();
+
+            await sleep(400);
+
+            document.getElementById('portfolio-loading').classList.add('hidden');
+            document.getElementById('portfolio-results').classList.remove('hidden');
+
+            renderPortfolio(data);
+
+        } catch (err) {
+            console.error('Portfolio analysis failed:', err);
+            document.getElementById('portfolio-loading').classList.add('hidden');
+            alert(`Portfolio analysis failed: ${err.message}`);
+        } finally {
+            runBtn.disabled = false;
+        }
+    }
+
+    function renderPortfolio(data) {
+        // ── Hero Stats ──
+        const divScoreEl = document.getElementById('portfolio-div-score');
+        animateNumber(divScoreEl, 0, data.diversification_score || 0, '');
+        document.getElementById('portfolio-div-grade').textContent = data.diversification_grade || '—';
+
+        // Risk
+        const riskEl = document.getElementById('portfolio-risk');
+        riskEl.textContent = data.overall_risk || '—';
+        riskEl.style.color = getRiskColor(data.overall_risk);
+
+        document.getElementById('portfolio-confidence').textContent =
+            `Avg Confidence: ${data.avg_confidence || 0}%`;
+
+        // Signal pills
+        document.getElementById('portfolio-signal-pills').innerHTML = `
+            <span class="signal-pill buy">${data.buy_count || 0} BUY</span>
+            <span class="signal-pill sell">${data.sell_count || 0} SELL</span>
+            <span class="signal-pill hold">${data.hold_count || 0} HOLD</span>
+        `;
+
+        // ── Risk Heatmap ──
+        renderRiskHeatmap(data.risk_heatmap || []);
+
+        // ── Sectors ──
+        renderSectors(data.sectors || []);
+
+        // ── Correlation Matrix ──
+        renderCorrelationMatrix(data.correlation_matrix || {});
+
+        // ── Holdings Table ──
+        renderHoldingsTable(data.holdings || []);
+
+        // ── Conflicts ──
+        renderConflicts(data.conflicts || []);
+
+        // ── Summary ──
+        document.getElementById('portfolio-summary-text').textContent = data.summary || '';
+    }
+
+    function renderRiskHeatmap(heatmap) {
+        const container = document.getElementById('portfolio-risk-heatmap');
+        container.innerHTML = '';
+
+        heatmap.forEach((item, idx) => {
+            const el = document.createElement('div');
+            el.className = 'risk-heatmap-item';
+            el.style.background = hexToRgba(item.color, 0.1);
+            el.style.borderColor = hexToRgba(item.color, 0.3);
+            el.style.animationDelay = `${idx * 0.05}s`;
+
+            el.innerHTML = `
+                <div class="risk-heatmap-symbol">${escapeHtml(item.symbol)}</div>
+                <div class="risk-heatmap-volatility" style="color:${item.color}">${item.volatility.toFixed(1)}%</div>
+                <div class="risk-heatmap-level" style="color:${item.color}">${item.risk_level}</div>
+                <div class="risk-heatmap-drawdown">Drawdown: ${item.max_drawdown.toFixed(1)}%</div>
+            `;
+            // The top bar
+            el.style.setProperty('--heatmap-color', item.color);
+            el.querySelector('.risk-heatmap-volatility').parentElement.insertAdjacentHTML(
+                'afterbegin', `<div style="position:absolute;top:0;left:0;right:0;height:4px;background:${item.color};border-radius:12px 12px 0 0;"></div>`
+            );
+
+            container.appendChild(el);
+        });
+    }
+
+    function renderSectors(sectors) {
+        const container = document.getElementById('portfolio-sector-list');
+        container.innerHTML = '';
+
+        const colors = ['#2563EB', '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE', '#818CF8'];
+
+        sectors.forEach((sector, idx) => {
+            const color = colors[idx % colors.length];
+            const el = document.createElement('div');
+            el.className = 'sector-item';
+            el.innerHTML = `
+                <div class="sector-bar-container">
+                    <div class="sector-bar-header">
+                        <span class="sector-name">${escapeHtml(sector.sector)}</span>
+                        <span class="sector-pct" style="color:${color}">${sector.percentage.toFixed(0)}%</span>
+                    </div>
+                    <div class="sector-symbols">${sector.symbols.join(', ')}</div>
+                    <div class="sector-bar-track">
+                        <div class="sector-bar-fill" style="width:${sector.percentage}%;background:${color}"></div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(el);
+        });
+    }
+
+    function renderCorrelationMatrix(matrix) {
+        const container = document.getElementById('portfolio-corr-matrix');
+        container.innerHTML = '';
+
+        const labels = matrix.labels || [];
+        const values = matrix.values || [];
+        const n = labels.length;
+
+        if (n === 0) return;
+
+        // Grid: (n+1) columns — header col + data cols
+        container.style.gridTemplateColumns = `repeat(${n + 1}, 1fr)`;
+
+        // Top-left empty cell
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'corr-cell header';
+        emptyCell.textContent = '';
+        container.appendChild(emptyCell);
+
+        // Header row
+        labels.forEach(label => {
+            const cell = document.createElement('div');
+            cell.className = 'corr-cell header';
+            cell.textContent = label;
+            container.appendChild(cell);
+        });
+
+        // Data rows
+        for (let i = 0; i < n; i++) {
+            // Row header
+            const rowHeader = document.createElement('div');
+            rowHeader.className = 'corr-cell header';
+            rowHeader.textContent = labels[i];
+            container.appendChild(rowHeader);
+
+            // Data cells
+            for (let j = 0; j < n; j++) {
+                const val = values[i] ? values[i][j] : 0;
+                const cell = document.createElement('div');
+
+                if (i === j) {
+                    cell.className = 'corr-cell diagonal';
+                    cell.textContent = '1.00';
+                } else {
+                    cell.className = 'corr-cell';
+                    cell.textContent = val.toFixed(2);
+                    const absVal = Math.abs(val);
+                    cell.style.background = getCorrColor(absVal);
+                    cell.style.color = absVal > 0.5 ? 'white' : 'var(--text-primary)';
+                }
+
+                container.appendChild(cell);
+            }
+        }
+    }
+
+    function renderHoldingsTable(holdings) {
+        const tbody = document.getElementById('portfolio-table-body');
+        tbody.innerHTML = '';
+
+        holdings.forEach(h => {
+            const changeCls = h.change_pct >= 0 ? 'positive' : 'negative';
+            const decType = h.decision.toLowerCase();
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <strong>${escapeHtml(h.symbol)}</strong>
+                    <div style="font-size:0.72rem;color:var(--text-tertiary)">${escapeHtml(h.company_name || '')}</div>
+                </td>
+                <td>$${h.price.toFixed(2)}</td>
+                <td class="table-change ${changeCls}">${h.change_pct >= 0 ? '+' : ''}${h.change_pct.toFixed(2)}%</td>
+                <td><span class="table-badge ${decType}">${h.decision}</span></td>
+                <td>${h.confidence.toFixed(1)}%</td>
+                <td>${escapeHtml(h.sentiment)}</td>
+                <td>${escapeHtml(h.risk_level)}</td>
+                <td>${h.volatility.toFixed(1)}%</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function renderConflicts(conflicts) {
+        const wrapper = document.getElementById('portfolio-conflicts');
+        const list = document.getElementById('portfolio-conflicts-list');
+
+        if (conflicts.length === 0) {
+            wrapper.classList.add('hidden');
+            return;
+        }
+
+        wrapper.classList.remove('hidden');
+        list.innerHTML = '';
+
+        conflicts.forEach(c => {
+            const el = document.createElement('div');
+            el.className = 'conflict-item';
+            el.innerHTML = `
+                <span class="conflict-symbol">${escapeHtml(c.symbol)}</span>
+                <span class="conflict-detail">${escapeHtml(c.details)} (Decision: ${c.decision} at ${c.confidence}%)</span>
+            `;
+            list.appendChild(el);
+        });
+    }
+
+    // ── Utility ──
+
+    function getRiskColor(level) {
+        const map = {
+            'Low': 'var(--buy)',
+            'Moderate': 'var(--hold)',
+            'High': 'var(--sell)',
+            'Very High': '#991B1B',
+        };
+        return map[level] || 'var(--text-primary)';
+    }
+
+    function getCorrColor(absVal) {
+        if (absVal >= 0.7) return 'rgba(220, 38, 38, 0.7)';   // red — high
+        if (absVal >= 0.4) return 'rgba(217, 119, 6, 0.5)';    // amber — medium
+        if (absVal >= 0.2) return 'rgba(217, 119, 6, 0.2)';    // light amber
+        return 'rgba(5, 150, 105, 0.15)';                       // green — low
+    }
+
+    function hexToRgba(hex, alpha) {
+        if (!hex || hex.charAt(0) !== '#') return `rgba(148,163,184,${alpha})`;
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r},${g},${b},${alpha})`;
+    }
+})();
+
+console.log('FinSynapse Portfolio Intelligence Hub loaded.');

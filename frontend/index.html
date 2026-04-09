@@ -98,6 +98,18 @@
                 </a>
             </li>
             <li>
+                <a href="#" class="nav-link" data-page="portfolio" id="nav-portfolio">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <rect x="2" y="3" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.5" />
+                        <path d="M6 10L9 7L12 9L16 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                        <circle cx="6" cy="13" r="1" fill="currentColor" />
+                        <circle cx="10" cy="11" r="1" fill="currentColor" />
+                        <circle cx="14" cy="13" r="1" fill="currentColor" />
+                    </svg>
+                    Portfolio
+                </a>
+            </li>
+            <li>
                 <a href="#" class="nav-link" data-page="chat" id="nav-chat">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                         <path d="M4 4H16C17.1 4 18 4.9 18 6V13C18 14.1 17.1 15 16 15H6L2 18V6C2 4.9 2.9 4 4 4Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -574,6 +586,158 @@
                 </div>
                 <div class="card">
                     <p class="bench-summary-text" id="bench-summary-text"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════ PAGE: PORTFOLIO ═══════════════════ -->
+        <section class="page" id="page-portfolio">
+            <div class="page-header">
+                <span class="page-label">PORTFOLIO INTELLIGENCE</span>
+                <h1 class="page-title">Portfolio Analysis Hub</h1>
+                <p class="page-desc">Analyze your entire portfolio with 5 AI agents. Get diversification scoring, risk heatmaps, and correlation insights.</p>
+            </div>
+
+            <!-- Portfolio Input -->
+            <div class="portfolio-input-card">
+                <label class="input-label">Enter Stock Symbols (comma-separated, 2–10 stocks)</label>
+                <div class="input-row">
+                    <input type="text" id="portfolio-input" class="stock-input" placeholder="e.g. AAPL, TSLA, NVDA, RELIANCE.NS" autocomplete="off">
+                    <button class="analyze-btn" id="portfolio-run-btn">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <path d="M3 9H15M15 9L10 4M15 9L10 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Analyze Portfolio
+                    </button>
+                </div>
+                <div class="quick-picks">
+                    <span class="quick-label">Sample portfolios:</span>
+                    <button class="quick-btn portfolio-preset-btn" data-symbols="AAPL,MSFT,NVDA,GOOGL">US Tech</button>
+                    <button class="quick-btn portfolio-preset-btn" data-symbols="RELIANCE.NS,TCS.NS,HDFCBANK.NS,INFY.NS">Indian Blue-chip</button>
+                    <button class="quick-btn portfolio-preset-btn" data-symbols="AAPL,TSLA,RELIANCE.NS,HDFCBANK.NS">Global Mix</button>
+                    <button class="quick-btn portfolio-preset-btn" data-symbols="NVDA,AMD,MSFT,META,NFLX">Growth Tech</button>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div class="portfolio-loading hidden" id="portfolio-loading">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Running multi-agent analysis on your portfolio...</div>
+                <div class="portfolio-loading-progress" id="portfolio-loading-progress">Analyzing stocks...</div>
+            </div>
+
+            <!-- Results -->
+            <div class="portfolio-results hidden" id="portfolio-results">
+
+                <!-- Hero Stats Row -->
+                <div class="portfolio-hero-row" id="portfolio-hero-row">
+                    <div class="portfolio-hero-card portfolio-diversification-card">
+                        <div class="portfolio-hero-label">DIVERSIFICATION</div>
+                        <div class="portfolio-hero-value" id="portfolio-div-score">0</div>
+                        <div class="portfolio-hero-grade" id="portfolio-div-grade">—</div>
+                    </div>
+                    <div class="portfolio-hero-card">
+                        <div class="portfolio-hero-label">OVERALL RISK</div>
+                        <div class="portfolio-hero-value" id="portfolio-risk">—</div>
+                        <div class="portfolio-hero-sub" id="portfolio-confidence">Avg Confidence: —</div>
+                    </div>
+                    <div class="portfolio-hero-card">
+                        <div class="portfolio-hero-label">SIGNAL BREAKDOWN</div>
+                        <div class="portfolio-signal-pills" id="portfolio-signal-pills">
+                            <span class="signal-pill buy">0 BUY</span>
+                            <span class="signal-pill sell">0 SELL</span>
+                            <span class="signal-pill hold">0 HOLD</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Risk Heatmap + Sector Breakdown -->
+                <div class="two-col-row">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Risk Heatmap</h3>
+                            <span class="card-subtitle">Volatility & risk per holding</span>
+                        </div>
+                        <div class="portfolio-risk-heatmap" id="portfolio-risk-heatmap">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Sector Allocation</h3>
+                        </div>
+                        <div class="portfolio-sector-list" id="portfolio-sector-list">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Correlation Matrix -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Correlation Matrix</h3>
+                        <span class="card-subtitle">How your holdings move together</span>
+                    </div>
+                    <div class="portfolio-corr-matrix-container">
+                        <div class="portfolio-corr-matrix" id="portfolio-corr-matrix">
+                            <!-- Populated dynamically -->
+                        </div>
+                        <div class="portfolio-corr-legend">
+                            <span class="corr-legend-item"><span class="corr-swatch" style="background:#059669"></span> Low (good)</span>
+                            <span class="corr-legend-item"><span class="corr-swatch" style="background:#D97706"></span> Medium</span>
+                            <span class="corr-legend-item"><span class="corr-swatch" style="background:#DC2626"></span> High (risky)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Holdings Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Holdings Analysis</h3>
+                        <span class="card-subtitle">Per-stock multi-agent signals</span>
+                    </div>
+                    <div class="portfolio-table-container">
+                        <table class="portfolio-table" id="portfolio-table">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Price</th>
+                                    <th>Change</th>
+                                    <th>Decision</th>
+                                    <th>Confidence</th>
+                                    <th>Sentiment</th>
+                                    <th>Risk</th>
+                                    <th>Volatility</th>
+                                </tr>
+                            </thead>
+                            <tbody id="portfolio-table-body">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Conflicts Alert -->
+                <div class="portfolio-conflicts hidden" id="portfolio-conflicts">
+                    <div class="card portfolio-conflicts-card">
+                        <div class="card-header">
+                            <h3 class="card-title">⚠️ Agent Conflicts Detected</h3>
+                        </div>
+                        <div class="portfolio-conflicts-list" id="portfolio-conflicts-list">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Summary -->
+                <div class="card portfolio-summary-card">
+                    <div class="ai-summary-badge">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M8 1L10 5.5L15 6.5L11.5 10L12.5 15L8 12.5L3.5 15L4.5 10L1 6.5L6 5.5L8 1Z" fill="currentColor" />
+                        </svg>
+                        PORTFOLIO INTELLIGENCE REPORT
+                    </div>
+                    <pre class="portfolio-summary-text" id="portfolio-summary-text"></pre>
                 </div>
             </div>
         </section>

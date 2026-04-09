@@ -17,6 +17,7 @@ import logging
 
 from tools.benchmark import get_benchmark_data
 from tools.chat import chat_with_context
+from tools.portfolio import analyze_portfolio
 
 logger = logging.getLogger("FinSynapse.Extensions")
 
@@ -82,6 +83,11 @@ class ChatRequest(BaseModel):
     stock_price: Optional[float] = 0.0
 
 
+class PortfolioRequest(BaseModel):
+    """Request body for the portfolio analysis endpoint."""
+    symbols: list
+
+
 # ═══════════════════════════════════════════════════════════════
 # ENDPOINTS
 # ═══════════════════════════════════════════════════════════════
@@ -140,4 +146,32 @@ async def chat_endpoint(request: ChatRequest):
         return result
     except Exception as e:
         logger.error(f"Chat failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/portfolio/analyze")
+async def portfolio_analysis(request: PortfolioRequest):
+    """
+    Analyze a portfolio of multiple stocks using the full multi-agent pipeline.
+
+    Returns per-stock analysis plus portfolio-level intelligence:
+    correlation matrix, diversification score, risk heatmap, sector breakdown.
+    """
+    if not request.symbols or len(request.symbols) < 2:
+        raise HTTPException(
+            status_code=400,
+            detail="Please provide at least 2 stock symbols."
+        )
+    if len(request.symbols) > 10:
+        raise HTTPException(
+            status_code=400,
+            detail="Maximum 10 symbols allowed per portfolio analysis."
+        )
+
+    try:
+        logger.info(f"Portfolio: {request.symbols}")
+        result = analyze_portfolio(request.symbols)
+        return result
+    except Exception as e:
+        logger.error(f"Portfolio analysis failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
